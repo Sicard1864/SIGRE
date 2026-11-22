@@ -8,7 +8,7 @@
 -- =====================================================================
 
 CREATE SCHEMA IF NOT EXISTS app;
-SET search_path TO app;
+SET search_path TO app, public;
 
 -- Maintient updated_at quel que soit le client qui modifie la ligne
 -- (API C#, script d'administration, outil BI). [PG]
