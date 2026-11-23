@@ -25,6 +25,13 @@ async fn main() {
         .await
         .expect("connexion à PostgreSQL impossible");
 
+    // Applique les migrations au démarrage (idempotent : sans effet si déjà jouées,
+    // embarquées dans le binaire via sqlx::migrate!)
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await
+        .expect("application des migrations impossible");
+
     let app = Router::new()
         .route("/health", get(health))
         .with_state(Arc::new(pool));
