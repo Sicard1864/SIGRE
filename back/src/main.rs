@@ -36,9 +36,11 @@ async fn main() {
         .route("/health", get(health))
         .with_state(Arc::new(pool));
 
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
+    // 0.0.0.0 : écoute sur toutes les interfaces. Obligatoire en conteneur :
+    // 127.0.0.1 n'écouterait que la boucle locale DU conteneur, invisible de l'extérieur.
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")
         .await
         .expect("port 3000 indisponible");
-    println!("SIGRE back à l'écoute sur http://127.0.0.1:3000");
+    println!("SIGRE back à l'écoute sur http://localhost:3000");
     axum::serve(listener, app).await.unwrap();
 }
