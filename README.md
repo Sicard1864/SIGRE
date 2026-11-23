@@ -26,13 +26,13 @@ Application web d'apprentissage combinant **répétition espacée** (SM-2 / FSRS
 - [Rust](https://rustup.rs) (rustup, toolchain stable)
   — sous Windows, le linker MSVC est requis (installé par rustup-init, ou [Visual Studio C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/))
 - [Node.js](https://nodejs.org) LTS
-- [PostgreSQL](https://www.postgresql.org/download/) 15 minimum ( UNIQUE NULLS NOT DISTINCT utilisé dans le schéma)
+- [PostgreSQL](https://www.postgresql.org/download/) 15 minimum (`UNIQUE NULLS NOT DISTINCT` utilisé dans le schéma)
 - [SQLx CLI](https://github.com/launchbadge/sqlx) : `cargo install sqlx-cli --no-default-features --features postgres`
 
 ## Installation
 
 ```bash
-git clone git@github.com\:Sicard1864/SIGRE.git
+git clone git@github.com:Sicard1864/SIGRE.git
 cd SIGRE
 ```
 
@@ -58,7 +58,7 @@ cp .env.example .env      # sous Windows : Copy-Item .env.example .env
 Puis édite `back/.env` et remplace le mot de passe :
 
 ```
-DATABASE_URL=postgres://postgres\:TON_MOT_DE_PASSE@localhost:5432/revisions
+DATABASE_URL=postgres://postgres:TON_MOT_DE_PASSE@localhost:5432/revisions
 ```
 
 > ⚠️ `.env` ne doit **jamais** être commité (il est ignoré par `.gitignore`). Seul `.env.example` est versionné.
@@ -87,14 +87,25 @@ npm run dev
 
 L'application : <http://localhost:5173>.
 
+### 5. Tout lancer avec Docker (optionnel)
+
+Avec [Docker Desktop](https://www.docker.com/products/docker-desktop/) installé, une seule commande démarre les 3 serveurs (base incluse, migrations appliquées automatiquement au démarrage du back) :
+
+```bash
+docker compose up --build
+```
+
+- API : <http://localhost:3000/health>
+- Application : <http://localhost:8080>
+
 ## Tests
 
 ```bash
 # Backend
 cd back && cargo test
 
-# Frontend
-cd front && npm test
+# Frontend (lint + build TypeScript ; tests unitaires front à venir)
+cd front && npm run lint && npm run build
 ```
 
 ## Structure du dépôt
@@ -119,6 +130,12 @@ Toute la documentation est dans [`doc/`](doc/) :
 - [Cahier des charges](doc/about-project.md) et [navigation](doc/navigation.md)
 - Conventions de code : [Rust](doc/style-rust.md), [React](doc/style-react.md), [SQL](doc/style-sql.md), [API](doc/style-api.md)
 - [Workflow Git](doc/git-workflow.md)
+
+## Versions testées
+
+Développement et tests effectués avec : Rust 1.100.0 (édition 2024) · Node.js 26.13.1 LTS · PostgreSQL 16.11 · Windows 10/11.
+
+Aucun blocage connu sur d'autres configurations récentes (Linux, PostgreSQL 17+).
 
 ## Contribuer
 
