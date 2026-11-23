@@ -1,0 +1,3 @@
+# Ignore le build local et les secrets : le contexte Docker reste petit
+target/
+.env

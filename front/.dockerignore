@@ -1,0 +1,3 @@
+# Ignore le build local : le contexte Docker reste petit
+node_modules/
+dist/

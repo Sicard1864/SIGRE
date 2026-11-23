@@ -1,0 +1,47 @@
+# Démarrage complet du projet en une commande :
+#   docker compose up --build
+#
+# - db    : PostgreSQL 16 (données persistées dans le volume sigre-db)
+# - back  : API Rust (applique les migrations au démarrage) — http://localhost:3000/health
+# - front : front React buildé, servi par nginx — http://localhost:8080
+#
+# Le port 5432 de la base n'est volontairement PAS publié pour ne pas
+# entrer en conflit avec le PostgreSQL installé en local.
+# Pour t'y connecter avec pgAdmin, décommente la section « ports » de db.
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: revisions
+    volumes:
+      - sigre-db:/var/lib/postgresql/data
+    # ports:
+    #   - "5433:5432"   # décommenter pour exposer la base (pgAdmin, psql...)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d revisions"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  back:
+    build: ./back
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/revisions
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  front:
+    build: ./front
+    ports:
+      - "8080:80"
+    depends_on:
+      - back
+
+volumes:
+  sigre-db:
