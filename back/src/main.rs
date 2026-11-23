@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use axum::{extract::State, routing::get, Router};
-use sqlx::{postgres::PgPoolOptions, PgPool};
+use axum::{Router, extract::State, routing::get};
+use sqlx::{PgPool, postgres::PgPoolOptions};
 
 async fn health(State(pool): State<Arc<PgPool>>) -> String {
     // Prouve que la connexion à PostgreSQL fonctionne, pas juste que le process vit
@@ -16,8 +16,8 @@ async fn health(State(pool): State<Arc<PgPool>>) -> String {
 async fn main() {
     dotenvy::dotenv().ok();
 
-    let database_url = std::env::var("DATABASE_URL")
-        .expect("DATABASE_URL manquante (définis-la dans back/.env)");
+    let database_url =
+        std::env::var("DATABASE_URL").expect("DATABASE_URL manquante (définis-la dans back/.env)");
 
     let pool = PgPoolOptions::new()
         .max_connections(5)
