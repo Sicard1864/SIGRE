@@ -1,7 +1,11 @@
+mod problem;
+mod questions;
+
 use std::sync::Arc;
 
 use axum::{Router, extract::State, routing::get};
 use sqlx::{PgPool, postgres::PgPoolOptions};
+use tower_http::cors::CorsLayer;
 
 async fn health(State(pool): State<Arc<PgPool>>) -> String {
     // Prouve que la connexion à PostgreSQL fonctionne, pas juste que le process vit
@@ -25,15 +29,28 @@ async fn main() {
         .await
         .expect("connexion à PostgreSQL impossible");
 
-    // Applique les migrations au démarrage (idempotent : sans effet si déjà jouées,
-    // embarquées dans le binaire via sqlx::migrate!)
+    // Applique les migrations au démarrage (idempotent : sans effet si déjà jouées)
     sqlx::migrate!("./migrations")
         .run(&pool)
         .await
         .expect("application des migrations impossible");
 
+    // CORS : seules les origines du front sont autorisées (liste explicite, pas de wildcard).
+    let allowed_origins = ["http://localhost:5173", "http://localhost:8080"];
+    let cors = CorsLayer::new()
+        .allow_origin(
+            allowed_origins
+                .iter()
+                .map(|origin| origin.parse().expect("origine CORS invalide"))
+                .collect::<Vec<axum::http::HeaderValue>>(),
+        )
+        .allow_methods([axum::http::Method::GET])
+        .allow_headers([axum::http::header::CONTENT_TYPE]);
+
     let app = Router::new()
         .route("/health", get(health))
+        .route("/api/v1/questions", get(questions::list))
+        .layer(cors)
         .with_state(Arc::new(pool));
 
     // 0.0.0.0 : écoute sur toutes les interfaces. Obligatoire en conteneur :

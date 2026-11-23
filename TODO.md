@@ -16,15 +16,15 @@ Chaque tâche de « À faire » correspond à une issue Git (n°) et à une bran
 - **22/11/2026 — Base** : migration initiale `0001_initial_schema` appliquée (24 tables, schéma `app`), migrations up/down vérifiées.
 - **22/11/2026 — Squelettes** : crate `sigre-back` (Axum + SQLx, `/health` → `OK db=1` vérifié en local), front Vite `react-ts` (ESLint).
 - **23/11/2026 — Tâche 0 terminée** : CI GitHub Actions **verte** (fmt, clippy, migrations, tests, build front) + badge ; branche `develop` créée, `main` protégée (PR obligatoire) ; description + topics du repo ; `back/.env.example` ; README enrichi (Docker, Versions testées, corrections).
-- **23/11/2026 — Tâche 1 (presque)** : virtualisation activée (BIOS), Docker Desktop opérationnel, `docker-compose.yml` + Dockerfiles (cache cargo-chef), migrations automatiques au démarrage (`sqlx::migrate!`), pile complète lancée (db healthy, back up, front servi par nginx sur :8080).
+- **23/11/2026 — Tâche 1 terminée** : virtualisation activée (BIOS), Docker Desktop opérationnel, `docker-compose.yml` + Dockerfiles (cache cargo-chef), migrations automatiques au démarrage (`sqlx::migrate!`), pile complète par une commande, `/health` joignable depuis le conteneur (fix `0.0.0.0`).
+- **23/11/2026 — Tâche 2 terminée** : arbitrage `public_id` **acté : UUID externe, BIGINT interne jamais exposé** (anti-énumération) ; migration `0002` ; `GET /api/v1/questions` validé bout en bout (UUID dans la réponse, page React affichant « flashcard — private ») ; CORS à liste explicite (5173, 8080) ; module `problem.rs` (ProblemDetails RFC 9457) ; workflow branches/PR en place.
+- **Leçons intégrées** : signature des handlers Axum (le bound `Handler` pointe la signature, pas le corps) ; checksum SQLx octet par octet → `.gitattributes` `*.sql eol=lf` (une migration appliquée ne se retouche jamais) ; `target/` sans slash initial dans .gitignore ; `search_path TO app, public` pour le carnet sqlx.
 
 <br>
 
 ## En cours
 
-- **Finaliser la tâche 1** : rebuilder avec le fix `0.0.0.0` (un conteneur qui écoute sur 127.0.0.1 est invisible de l'extérieur, c'est la leçon du jour), confirmer `http://localhost:3000/health` → `OK db=1` **depuis la pile Docker**, `docker compose down`, puis committer (`fix(back): écoute sur 0.0.0.0...`) et pousser (CI doit rester verte).
-- **Docs** : corriger les références internes obsolètes (en-tête de la migration SQL qui cite `SQL_STYLE_GUIDE.md`/`MODELE_METIER.md` → `doc/style-sql.md`, `doc/domain-model.md`).
-- **TIL.md** : consigner les apprentissages DevOps de la soirée (BIOS/VT-x, 0.0.0.0 vs 127.0.0.1 en conteneur, cargo-chef, search_path vs carnet sqlx, idempotence des migrations) — ce sont des questions d'entretien en or.
+- **Merger la PR** `feat/api-v1-questions` → `develop` sur GitHub (attendre la CI verte dans la PR, puis Merge + suppression de la branche), puis localement : `git checkout develop && git pull`.
 
 <br>
 
@@ -32,14 +32,13 @@ Chaque tâche de « À faire » correspond à une issue Git (n°) et à une bran
 
 Ordonné par priorité : chaque étape dépend des précédentes (le détail et les « definition of done » sont dans `doc/about-project.md` § 4).
 
-- **2. Relier par l'API** : ⚠️ *arbitrage d'abord : `public_id` UUID externe (interne BIGINT) ou non — recommandation : OUI, anti-énumération ; si acté, migration `0002` (append-only, ne jamais retoucher `0001` appliquée)*. Puis premier endpoint bout en bout `GET /api/v1/questions` (table vide), CORS configuré, erreurs ProblemDetails. *DoD : le front affiche la réponse du back.*
-- **3. Compte utilisateur** : inscription, DTO et validations, `POST /api/v1/accounts` + `GET /api/v1/accounts/me`.
+- **3. Compte utilisateur** : inscription, DTO et validations, `POST /api/v1/accounts` + `GET /api/v1/accounts/me` (penser `public_id` sur `account`, même logique que 0002).
 - **4. Authentification** : Argon2id, JWT accès courte durée + refresh rotatif, middleware Axum, rate limiting login, `PATCH /accounts/me`, anonymisation RGPD.
 - **5. Contenu** : `tag`, `question_type`, `question`, `answer`, publication (`private`/`pending_review`/`published`), endpoints de création et de lecture.
 - **6. Moteurs SM-2 + Elo** : implémentation pure et testée (SM-2 par question, Elo par tag, pipeline `attempt` transactionnel : SM-2 → Elo → historique). *Le cœur différenciant du projet — conversation Vibe dédiée.*
 - **7. Pratique** : `practice_session`, sélection des questions dues, soumission de tentative, réponse avec `srs` et `elo_deltas` (l'exemple canonique de `doc/style-api.md` § 13).
 - **8. Groupes et devoirs** : `study_group`, membres et rôles, `assignment` avec seuil 17/20, suivi des résultats par le propriétaire.
-- **9. Mise en ligne** : images Docker des 3 serveurs (déjà amorcées), déploiement (VPS français ou équivalent), HTTPS, sauvegardes PostgreSQL testées, premier tag `v0.1.0`.
+- **9. Mise en ligne** : images Docker des 3 serveurs (ébauchées), déploiement (VPS français ou équivalent), HTTPS, sauvegardes PostgreSQL testées, premier tag `v0.1.0`.
 
 <br>
 
@@ -47,7 +46,6 @@ Ordonné par priorité : chaque étape dépend des précédentes (le détail et 
 
 Questions ouvertes, à trancher quand on les rencontre :
 
-- **API — `public_id` UUID** : à trancher EN PREMIER dans la tâche 2 (avant la première API publique). Recommandation : UUID externe, BIGINT interne, migration `0002` dédiée.
 - **Contenu** : comment versionner une question déjà utilisée dans des tentatives quand on la corrige (l'historique des notes doit rester interprétable) ?
 - **Juridique** : consentement parental pour les moins de 15 ans (RGPD, article 8) — à arbitrer avant l'ouverture réelle aux élèves.
 - **Elo** : biais de population (les premiers contributeurs fixent la difficulté initiale des questions) — prévoir une période de calibration et une note dans `doc/domain-model.md` § 9.
