@@ -76,7 +76,10 @@ async fn register(router: &Router, username: &str) -> String {
     .await;
     assert_eq!(response.status(), StatusCode::CREATED);
     let body = body_json(response).await;
-    body["id"].as_str().expect("id doit être une chaîne").to_owned()
+    body["id"]
+        .as_str()
+        .expect("id doit être une chaîne")
+        .to_owned()
 }
 
 async fn login(router: &Router, email: &str, password: &str) -> axum::http::Response<Body> {
@@ -140,21 +143,19 @@ async fn login_with_valid_credentials_returns_tokens_and_account(pool: PgPool) {
     // En base : le hash du refresh renvoyé, jamais le token brut ; et
     // last_login_at est posé.
     let refresh_token = body["refresh_token"].as_str().unwrap();
-    let stored: Option<i64> = sqlx::query_scalar(
-        "SELECT refresh_token_id FROM app.refresh_token WHERE token_hash = $1",
-    )
-    .bind(sha256_hex(refresh_token))
-    .fetch_optional(&pool)
-    .await
-    .unwrap();
+    let stored: Option<i64> =
+        sqlx::query_scalar("SELECT refresh_token_id FROM app.refresh_token WHERE token_hash = $1")
+            .bind(sha256_hex(refresh_token))
+            .fetch_optional(&pool)
+            .await
+            .unwrap();
     assert!(stored.is_some());
 
-    let last_login_at: Option<chrono::DateTime<chrono::Utc>> = sqlx::query_scalar(
-        "SELECT last_login_at FROM app.account WHERE username = 'alice'",
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
+    let last_login_at: Option<chrono::DateTime<chrono::Utc>> =
+        sqlx::query_scalar("SELECT last_login_at FROM app.account WHERE username = 'alice'")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
     assert!(last_login_at.is_some());
 }
 
@@ -305,12 +306,11 @@ async fn refresh_rotates_tokens_and_reuse_revokes_the_family(pool: PgPool) {
     let family = refresh(&router, &second_refresh).await;
     assert_eq!(family.status(), StatusCode::UNAUTHORIZED);
 
-    let active: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM app.refresh_token WHERE revoked_at IS NULL",
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
+    let active: i64 =
+        sqlx::query_scalar("SELECT COUNT(*) FROM app.refresh_token WHERE revoked_at IS NULL")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
     assert_eq!(active, 0);
 }
 
@@ -460,12 +460,11 @@ async fn delete_me_anonymizes_account_and_revokes_sessions(pool: PgPool) {
     assert!(password_hash.is_none());
     assert!(archived_at.is_some());
 
-    let active_sessions: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM app.refresh_token WHERE revoked_at IS NULL",
-    )
-    .fetch_one(&pool)
-    .await
-    .unwrap();
+    let active_sessions: i64 =
+        sqlx::query_scalar("SELECT COUNT(*) FROM app.refresh_token WHERE revoked_at IS NULL")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
     assert_eq!(active_sessions, 0);
 
     // Le jeton d'accès encore valide côté durée ne sert plus : le compte est

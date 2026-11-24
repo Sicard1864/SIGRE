@@ -85,7 +85,8 @@ impl IntoResponse for ApiError {
                     Some("rate_limit.exceeded".to_owned()),
                     None,
                 );
-                if let Ok(value) = axum::http::HeaderValue::from_str(&retry_after_secs.to_string()) {
+                if let Ok(value) = axum::http::HeaderValue::from_str(&retry_after_secs.to_string())
+                {
                     response
                         .headers_mut()
                         .insert(axum::http::header::RETRY_AFTER, value);

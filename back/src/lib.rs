@@ -10,8 +10,7 @@ pub mod questions;
 pub mod rate_limit;
 
 use axum::{
-    Json,
-    Router,
+    Json, Router,
     extract::State,
     routing::{get, post},
 };

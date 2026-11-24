@@ -77,7 +77,13 @@ impl RateLimiter {
             }
             // Fenêtre expirée ou premier appel : on repart d'une fenêtre neuve.
             _ => {
-                buckets.insert(rule.key, Bucket { window_started_at: now, count: 1 });
+                buckets.insert(
+                    rule.key,
+                    Bucket {
+                        window_started_at: now,
+                        count: 1,
+                    },
+                );
                 Ok(())
             }
         }

@@ -15,7 +15,11 @@ use uuid::Uuid;
 use crate::api_error::ApiError;
 use crate::app_state::AppState;
 use crate::current_user::CurrentUser;
-use crate::{json::JsonBody, problem::{FieldError, Problem}, rate_limit};
+use crate::{
+    json::JsonBody,
+    problem::{FieldError, Problem},
+    rate_limit,
+};
 
 // ============================================================
 // Champs (constantes)
@@ -199,13 +203,13 @@ fn account_sql_error(sqlx_error: sqlx::Error) -> ApiError {
                 return ApiError::Conflict {
                     code: "account.username_taken",
                     detail: "Ce nom d'utilisateur est déjà pris.",
-                }
+                };
             }
             Some("ux_account_email") => {
                 return ApiError::Conflict {
                     code: "account.email_taken",
                     detail: "Cette adresse email est déjà utilisée.",
-                }
+                };
             }
             other => {
                 eprintln!("[accounts] échec SQL (contrainte {other:?})");
@@ -223,7 +227,10 @@ fn account_sql_error(sqlx_error: sqlx::Error) -> ApiError {
 /// paramètres et sel inclus). Appelé dans `spawn_blocking` : ce calcul coûte
 /// volontairement du CPU (défense anti-force-brute déclarée) et ne doit pas
 /// geler le runtime async (STYLE_RUST.md § 11).
-pub(crate) fn hash_password(password: &str, pepper: &str) -> Result<String, argon2::password_hash::Error> {
+pub(crate) fn hash_password(
+    password: &str,
+    pepper: &str,
+) -> Result<String, argon2::password_hash::Error> {
     let salt = SaltString::generate(&mut OsRng);
     let argon2 = Argon2::default(); // Argon2id v19, paramètres par défaut de la crate
     // Le poivre n'est jamais stocké : il vit dans l'environnement et est

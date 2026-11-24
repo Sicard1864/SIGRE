@@ -36,14 +36,19 @@ fn token_expired() -> ApiError {
 impl FromRequestParts<AppState> for CurrentUser {
     type Rejection = ApiError;
 
-    async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState,
+    ) -> Result<Self, Self::Rejection> {
         let authorization = parts
             .headers
             .get(axum::http::header::AUTHORIZATION)
             .and_then(|value| value.to_str().ok())
             .ok_or_else(token_missing)?;
 
-        let token = authorization.strip_prefix("Bearer ").ok_or_else(token_invalid)?;
+        let token = authorization
+            .strip_prefix("Bearer ")
+            .ok_or_else(token_invalid)?;
 
         let claims = jsonwebtoken::decode::<Claims>(
             token,
@@ -55,11 +60,7 @@ impl FromRequestParts<AppState> for CurrentUser {
             _ => token_invalid(),
         })?;
 
-        let public_id: Uuid = claims
-            .claims
-            .sub
-            .parse()
-            .map_err(|_| token_invalid())?;
+        let public_id: Uuid = claims.claims.sub.parse().map_err(|_| token_invalid())?;
 
         let account_id: Option<i64> = sqlx::query_scalar(
             "SELECT account_id FROM app.account WHERE public_id = $1 AND archived_at IS NULL",
