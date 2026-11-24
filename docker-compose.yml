@@ -28,6 +28,11 @@ services:
 
   back:
     build: ./back
+    # back/.env porte les secrets locaux (PASSWORD_PEPPER...). Les valeurs de
+    # « environment » ci-dessous priment sur env_file : DATABASE_URL du
+    # conteneur reste celle de la base conteneurisée.
+    env_file:
+      - back/.env
     environment:
       DATABASE_URL: postgres://postgres:postgres@db:5432/revisions
     ports:
