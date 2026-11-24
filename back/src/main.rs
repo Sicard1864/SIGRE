@@ -1,15 +1,17 @@
-use std::sync::Arc;
-
-use axum::{Router, extract::State, routing::get};
 use sqlx::{PgPool, postgres::PgPoolOptions};
 
-async fn health(State(pool): State<Arc<PgPool>>) -> String {
-    // Prouve que la connexion à PostgreSQL fonctionne, pas juste que le process vit
-    let one: i32 = sqlx::query_scalar("SELECT 1")
-        .fetch_one(&*pool)
-        .await
-        .expect("requête SELECT 1 impossible");
-    format!("OK db={one}")
+use sigre_back::{app_state::AppState, build_router};
+
+/// Construction de l'état applicatif : la configuration est validée au
+/// démarrage (expect avec message de correction), jamais à la première
+/// requête d'un utilisateur.
+fn build_state_from_env(pool: PgPool) -> AppState {
+    let password_pepper = std::env::var("PASSWORD_PEPPER")
+        .expect("PASSWORD_PEPPER manquante (définis-la dans back/.env, cf. .env.example)");
+    AppState {
+        pool,
+        password_pepper,
+    }
 }
 
 #[tokio::main]
@@ -25,16 +27,14 @@ async fn main() {
         .await
         .expect("connexion à PostgreSQL impossible");
 
-    // Applique les migrations au démarrage (idempotent : sans effet si déjà jouées,
-    // embarquées dans le binaire via sqlx::migrate!)
+    // Applique les migrations au démarrage (idempotent : sans effet si déjà jouées)
     sqlx::migrate!("./migrations")
         .run(&pool)
         .await
         .expect("application des migrations impossible");
 
-    let app = Router::new()
-        .route("/health", get(health))
-        .with_state(Arc::new(pool));
+    let state = build_state_from_env(pool);
+    let app = build_router(state);
 
     // 0.0.0.0 : écoute sur toutes les interfaces. Obligatoire en conteneur :
     // 127.0.0.1 n'écouterait que la boucle locale DU conteneur, invisible de l'extérieur.

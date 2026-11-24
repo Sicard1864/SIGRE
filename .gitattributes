@@ -1,0 +1,4 @@
+# Les fichiers de migration SQLx sont gravés dans le marbre une fois appliqués :
+# SQLx mémorise leur checksum octet par octet, fins de ligne incluses.
+# On verrouille donc LF partout (checkout identique sur Windows, Linux, CI, Docker).
+*.sql text eol=lf
