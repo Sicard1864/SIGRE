@@ -1,10 +1,13 @@
 pub mod accounts;
 pub mod api_error;
 pub mod app_state;
+pub mod auth;
+pub mod current_user;
 pub mod json;
 pub mod openapi;
 pub mod problem;
 pub mod questions;
+pub mod rate_limit;
 
 use axum::{
     Json, Router,
@@ -37,13 +40,26 @@ pub fn build_router(state: AppState) -> Router {
                 .map(|origin| origin.parse().expect("origine CORS invalide"))
                 .collect::<Vec<axum::http::HeaderValue>>(),
         )
-        .allow_methods([axum::http::Method::GET, axum::http::Method::POST])
+        .allow_methods([
+            axum::http::Method::GET,
+            axum::http::Method::POST,
+            axum::http::Method::PATCH,
+            axum::http::Method::DELETE,
+        ])
         .allow_headers([axum::http::header::CONTENT_TYPE]);
 
     let app = Router::new()
         .route("/health", get(health))
         .route("/api/v1/questions", get(questions::list))
         .route("/api/v1/accounts", post(accounts::register))
+        .route("/api/v1/auth/login", post(auth::login))
+        .route("/api/v1/auth/refresh", post(auth::refresh))
+        .route(
+            "/api/v1/accounts/me",
+            get(accounts::me)
+                .patch(accounts::update_me)
+                .delete(accounts::delete_me),
+        )
         .route(
             "/api/v1/openapi.json",
             get(|| async { Json(openapi::ApiDoc::openapi()) }),

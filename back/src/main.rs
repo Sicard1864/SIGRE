@@ -1,6 +1,10 @@
 use sqlx::{PgPool, postgres::PgPoolOptions};
 
-use sigre_back::{app_state::AppState, build_router};
+use sigre_back::{
+    app_state::{AppState, JwtConfig},
+    build_router,
+    rate_limit::RateLimiter,
+};
 
 /// Construction de l'état applicatif : la configuration est validée au
 /// démarrage (expect avec message de correction), jamais à la première
@@ -11,6 +15,8 @@ fn build_state_from_env(pool: PgPool) -> AppState {
     AppState {
         pool,
         password_pepper,
+        jwt: JwtConfig::from_env(),
+        rate_limiter: RateLimiter::new(),
     }
 }
 

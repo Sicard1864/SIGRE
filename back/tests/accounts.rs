@@ -13,12 +13,22 @@ use serde_json::Value;
 use sqlx::PgPool;
 use tower::ServiceExt;
 
-use sigre_back::{app_state::AppState, build_router};
+use sigre_back::{
+    app_state::{AppState, JwtConfig},
+    build_router,
+    rate_limit::RateLimiter,
+};
 
 fn test_router(pool: PgPool) -> Router {
     let state = AppState {
         pool,
         password_pepper: "test-pepper".to_owned(),
+        jwt: JwtConfig {
+            secret: "test-secret-0123456789abcdef/0123".to_owned(),
+            access_ttl_minutes: 15,
+            refresh_ttl_days: 30,
+        },
+        rate_limiter: RateLimiter::new(),
     };
     build_router(state)
 }
